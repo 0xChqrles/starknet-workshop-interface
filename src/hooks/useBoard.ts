@@ -72,8 +72,14 @@ export default function useBoard(address?: string): UseBoardResponse {
       return acc
     }, {})
 
+    const nameToAddressMap = res.data.players.reduce<Record<string, string>>((acc, rawPlayer) => {
+      acc[shortString.decodeShortString(num.toHex(rawPlayer.name))] = num.toHex(rawPlayer.address)
+
+      return acc
+    }, {})
+
     return {
-      playersNameAddrMap: addressToNameMap,
+      playersNameAddrMap: nameToAddressMap,
       round: Number(res.data.round),
       players: res.data.players.map((rawPlayer): PlayerState => {
         const address = num.toHex(rawPlayer.address)

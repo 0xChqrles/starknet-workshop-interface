@@ -1,6 +1,8 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useContractWrite } from '@starknet-react/core'
+import { useMemo, useState } from 'react'
 import { useCloseModal, usePlayerModal } from 'src/hooks/useModal'
 import { ThemedText } from 'src/theme/components'
+import { Call, shortString } from 'starknet'
 import { styled } from 'styled-components'
 
 import { PrimaryButton } from '../Button'
@@ -37,8 +39,8 @@ const Hr = styled.div`
 `
 
 export default function PlayerModal({ playerAddress, playerName, playersNameAddrMap }: PlayerModalProps) {
-  const [selectedLosingSelectable, setSelectedLosingSelectable] = useState(0)
-  const [selectedReceivingSelectable, setSelectedReceivingSelectable] = useState(0)
+  const [selectedLosingStrategy, setSelectedLosingStrategy] = useState(0)
+  const [selectedReceivingStrategy, setSelectedReceivingStrategy] = useState(0)
   const [selectedNextAction, setSelectedNextAction] = useState(0)
   const [name, setName] = useState('')
 
@@ -50,13 +52,30 @@ export default function PlayerModal({ playerAddress, playerName, playersNameAddr
 
   // modal
   const [isOpen] = usePlayerModal()
-
-  // modal
   const close = useCloseModal()
 
-  const play = useCallback(() => {
-    console.log('hey')
-  }, [])
+  // calls
+  const calls = useMemo((): Call[] => {
+    return [
+      {
+        calldata: [selectedLosingStrategy],
+        contractAddress: playerAddress ?? '',
+        entrypoint: 'set_losing_strategy',
+      },
+      {
+        calldata: [selectedReceivingStrategy],
+        contractAddress: playerAddress ?? '',
+        entrypoint: 'set_receiving_strategy',
+      },
+      {
+        calldata: [shortString.encodeShortString(name)],
+        contractAddress: playerAddress ?? '',
+        entrypoint: ACTIONS[selectedNextAction].toLowerCase(),
+      },
+    ]
+  }, [name, playerAddress, selectedLosingStrategy, selectedNextAction, selectedReceivingStrategy])
+
+  const { writeAsync } = useContractWrite({ calls })
 
   if (!isOpen || !playerAddress || !playerName) return null
 
@@ -70,8 +89,8 @@ export default function PlayerModal({ playerAddress, playerName, playersNameAddr
               {LOSING_STRATEGIES.map((startegy, index) => (
                 <Selectable
                   key={startegy}
-                  selected={selectedLosingSelectable == index}
-                  onClick={() => setSelectedLosingSelectable(index)}
+                  selected={selectedLosingStrategy == index}
+                  onClick={() => setSelectedLosingStrategy(index)}
                 >
                   {startegy}
                 </Selectable>
@@ -87,8 +106,8 @@ export default function PlayerModal({ playerAddress, playerName, playersNameAddr
               {RECEIVING_STRATEGIES.map((startegy, index) => (
                 <Selectable
                   key={startegy}
-                  selected={selectedReceivingSelectable == index}
-                  onClick={() => setSelectedReceivingSelectable(index)}
+                  selected={selectedReceivingStrategy == index}
+                  onClick={() => setSelectedReceivingStrategy(index)}
                 >
                   {startegy}
                 </Selectable>
@@ -116,7 +135,7 @@ export default function PlayerModal({ playerAddress, playerName, playersNameAddr
             <Input onUserInput={setName} placeholder="Name" />
           </Column>
 
-          <PrimaryButton disabled={!canPlay} onClick={play} large>
+          <PrimaryButton disabled={!canPlay} onClick={() => writeAsync()} large>
             Play !
           </PrimaryButton>
         </Column>
