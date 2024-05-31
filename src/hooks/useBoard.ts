@@ -6,11 +6,12 @@ import { BlockTag, num, shortString } from 'starknet'
 // State
 
 interface BoardState {
+  playersNameAddrMap: Record<string, string>
   round: number
   players: PlayerState[]
 }
 
-interface PlayerState {
+export interface PlayerState {
   points: number
   name: string
   address: string
@@ -72,6 +73,7 @@ export default function useBoard(address?: string): UseBoardResponse {
     }, {})
 
     return {
+      playersNameAddrMap: addressToNameMap,
       round: Number(res.data.round),
       players: res.data.players.map((rawPlayer): PlayerState => {
         const address = num.toHex(rawPlayer.address)

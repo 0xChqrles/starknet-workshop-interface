@@ -5,7 +5,7 @@ const colors = {
   black: '#000000',
 
   neutral1_dark: '#f7f7f7',
-  neutral2_dark: 'rgba(235, 235, 245, 0.6)',
+  neutral2_dark: 'rgba(235, 235, 245, 0.5)',
 
   error_dark: '#ff0030',
 }

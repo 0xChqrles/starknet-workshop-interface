@@ -1,7 +1,9 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Column, Row } from 'src/components/Flex'
-import useBoard from 'src/hooks/useBoard'
+import PlayerModal from 'src/components/PlayerModal'
+import useBoard, { PlayerState } from 'src/hooks/useBoard'
+import { usePlayerModal } from 'src/hooks/useModal'
 import { ThemedText } from 'src/theme/components'
 import * as Icons from 'src/theme/components/icons'
 import { num } from 'starknet'
@@ -54,10 +56,24 @@ const Hr = styled.div`
 `
 
 export default function BoardPage() {
+  const [selectedPlayer, setSelectedPlayer] = useState<PlayerState | null>(null)
+
   // URL
   const { address: boardAddress } = useParams()
 
   const { error, board } = useBoard(boardAddress)
+
+  // modal
+  const [, togglePlayerModal] = usePlayerModal()
+
+  // select player
+  const selectPlayer = useCallback(
+    (player: PlayerState) => {
+      setSelectedPlayer(player)
+      togglePlayerModal()
+    },
+    [togglePlayerModal]
+  )
 
   // characters variations
   const getHueRotation = useCallback((address: string): number => {
@@ -83,59 +99,67 @@ export default function BoardPage() {
   }
 
   return (
-    <Column gap={64}>
-      <ThemedText.HeadlineLarge textAlign="center" marginTop={100}>
-        Round {board.round}
-      </ThemedText.HeadlineLarge>
+    <>
+      <Column gap={64}>
+        <ThemedText.HeadlineLarge textAlign="center" marginTop={100}>
+          Round {board.round}
+        </ThemedText.HeadlineLarge>
 
-      <StyledBoardPage>
-        {board.players.map((player) => (
-          <Player key={player.name}>
-            <PlayerName>{player.name}</PlayerName>
+        <StyledBoardPage>
+          {board.players.map((player) => (
+            <Player key={player.name}>
+              <PlayerName>{player.name}</PlayerName>
 
-            <Character hue={getHueRotation(player.address)} />
+              <Character hue={getHueRotation(player.address)} onClick={() => selectPlayer(player)} />
 
-            <Stats>
-              <Row justify="space-between">
-                <ThemedText.BodyPrimary>POINTS:</ThemedText.BodyPrimary>
-                <ThemedText.BodyPrimary>{player.points}</ThemedText.BodyPrimary>
-              </Row>
-
-              <Hr />
-
-              <Row justify="space-between">
-                <ThemedText.BodyPrimary>GAVE:</ThemedText.BodyPrimary>
-                <ThemedText.BodyPrimary>{player.exposedGiving.count}</ThemedText.BodyPrimary>
-              </Row>
-
-              {player.exposedGiving.exposer ? (
+              <Stats>
                 <Row justify="space-between">
-                  <ThemedText.BodyPrimary>EXPOSED BY:</ThemedText.BodyPrimary>
-                  <ThemedText.BodyPrimary>{player.exposedGiving.exposer}</ThemedText.BodyPrimary>
+                  <ThemedText.BodyPrimary>POINTS:</ThemedText.BodyPrimary>
+                  <ThemedText.BodyPrimary>{player.points}</ThemedText.BodyPrimary>
                 </Row>
-              ) : (
-                <ThemedText.BodyPrimary>-</ThemedText.BodyPrimary>
-              )}
 
-              <Hr />
+                <Hr />
 
-              <Row justify="space-between">
-                <ThemedText.BodyPrimary>STOLE:</ThemedText.BodyPrimary>
-                <ThemedText.BodyPrimary>{player.exposedStealing.count}</ThemedText.BodyPrimary>
-              </Row>
-
-              {player.exposedStealing.exposer ? (
                 <Row justify="space-between">
-                  <ThemedText.BodyPrimary>EXPOSED BY:</ThemedText.BodyPrimary>
-                  <ThemedText.BodyPrimary>{player.exposedStealing.exposer}</ThemedText.BodyPrimary>
+                  <ThemedText.BodyPrimary>GAVE:</ThemedText.BodyPrimary>
+                  <ThemedText.BodyPrimary>{player.exposedGiving.count}</ThemedText.BodyPrimary>
                 </Row>
-              ) : (
-                <ThemedText.BodyPrimary>-</ThemedText.BodyPrimary>
-              )}
-            </Stats>
-          </Player>
-        ))}
-      </StyledBoardPage>
-    </Column>
+
+                {player.exposedGiving.exposer ? (
+                  <Row justify="space-between">
+                    <ThemedText.BodyPrimary>EXPOSED BY:</ThemedText.BodyPrimary>
+                    <ThemedText.BodyPrimary>{player.exposedGiving.exposer}</ThemedText.BodyPrimary>
+                  </Row>
+                ) : (
+                  <ThemedText.BodyPrimary>-</ThemedText.BodyPrimary>
+                )}
+
+                <Hr />
+
+                <Row justify="space-between">
+                  <ThemedText.BodyPrimary>STOLE:</ThemedText.BodyPrimary>
+                  <ThemedText.BodyPrimary>{player.exposedStealing.count}</ThemedText.BodyPrimary>
+                </Row>
+
+                {player.exposedStealing.exposer ? (
+                  <Row justify="space-between">
+                    <ThemedText.BodyPrimary>EXPOSED BY:</ThemedText.BodyPrimary>
+                    <ThemedText.BodyPrimary>{player.exposedStealing.exposer}</ThemedText.BodyPrimary>
+                  </Row>
+                ) : (
+                  <ThemedText.BodyPrimary>-</ThemedText.BodyPrimary>
+                )}
+              </Stats>
+            </Player>
+          ))}
+        </StyledBoardPage>
+      </Column>
+
+      <PlayerModal
+        playerName={selectedPlayer?.name}
+        playerAddress={selectedPlayer?.address}
+        playersNameAddrMap={board.playersNameAddrMap}
+      />
+    </>
   )
 }
